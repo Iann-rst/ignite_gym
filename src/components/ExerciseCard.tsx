@@ -17,7 +17,7 @@ export function ExerciseCard({ ...rest }: Props) {
           rounded="md"
           alt="Imagem do exercício"
           mr={4}
-          resizeMode="center"
+          resizeMode="cover"
         />
         <VStack flex={1}>
           <Heading color="white" fontSize="lg">Puxada frontal</Heading>
