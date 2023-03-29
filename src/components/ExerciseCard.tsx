@@ -20,7 +20,7 @@ export function ExerciseCard({ ...rest }: Props) {
           resizeMode="cover"
         />
         <VStack flex={1}>
-          <Heading color="white" fontSize="lg">Puxada frontal</Heading>
+          <Heading color="white" fontSize="lg" fontFamily="heading">Puxada frontal</Heading>
           <Text color="gray.200" fontSize="sm" mt={1} numberOfLines={2}>3 séries x 12 repetições</Text>
         </VStack>
 

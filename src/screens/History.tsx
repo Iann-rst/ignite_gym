@@ -27,7 +27,7 @@ export function History() {
           <HistoryCard />
         )}
         renderSectionHeader={({ section }) => (
-          <Heading color="gray.200" fontSize="md" mt={10} mb={3}>{section.title}</Heading>
+          <Heading color="gray.200" fontFamily="heading" fontSize="md" mt={10} mb={3}>{section.title}</Heading>
         )}
         px={8}
         contentContainerStyle={exercises.length === 0 && { flex: 1, justifyContent: 'center' }}
