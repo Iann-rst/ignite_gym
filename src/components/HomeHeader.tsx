@@ -1,9 +1,13 @@
 import { MaterialIcons } from '@expo/vector-icons';
+import { useAuth } from '@hooks/useAuth';
 import { Heading, HStack, Icon, Text, VStack } from 'native-base';
 import { TouchableOpacity } from 'react-native';
 import { UserAvatar } from './UserAvatar';
 
 export function HomeHeader() {
+
+  const { user } = useAuth()
+
   return (
     <HStack bg="gray.600" pt={16} pb={5} px={8} alignItems="center">
       <UserAvatar
@@ -18,7 +22,7 @@ export function HomeHeader() {
           Olá,
         </Text>
         <Heading color="gray.100" fontSize="md" fontFamily="heading">
-          Iann
+          {user.name}
         </Heading>
       </VStack>
 
