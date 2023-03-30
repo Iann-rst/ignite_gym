@@ -1,8 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigation } from "@react-navigation/native";
-import { Center, Heading, Image, ScrollView, Text, VStack } from "native-base";
+import { Center, Heading, Image, ScrollView, Text, useToast, VStack } from "native-base";
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
+
+import { api } from '@services/api';
+import { AppError } from '@utils/AppError';
+
 
 import BackGroundImg from '@assets/background.png';
 import LogoSvg from "@assets/logo.svg";
@@ -45,6 +49,8 @@ const schemaValidation = z.object({
 export function SignUp() {
   const { goBack } = useNavigation();
 
+  const toast = useToast();
+
   const { control, handleSubmit, formState: { errors } } = useForm<FormDataProps>({
     resolver: zodResolver(schemaValidation)
   });
@@ -53,8 +59,21 @@ export function SignUp() {
     goBack()
   }
 
-  function handleSignUp(data: FormDataProps) {
-    console.log("Formulário => ", data);
+  async function handleSignUp({ name, email, password }: FormDataProps) {
+    try {
+      const response = await api.post('/users', { name, email, password })
+      console.log(response.data);
+    } catch (error) {
+      const isAppError = error instanceof AppError;
+
+      const title = isAppError ? error.message : 'Não foi possível criar a conta. Tente novamente mais tarde.'
+      toast.show({
+        title,
+        placement: 'top',
+        bgColor: 'red.500',
+        _title: { textAlign: 'center' }
+      })
+    }
   }
 
   return (
