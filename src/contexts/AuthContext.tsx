@@ -1,7 +1,7 @@
 import { UserDTO } from "@dtos/UserDTO";
 import { api } from "@services/api";
-import { storageUserSave } from "@storage/storageUser";
-import { createContext, ReactNode, useState } from "react";
+import { storageUserGet, storageUserSave } from "@storage/storageUser";
+import { createContext, ReactNode, useEffect, useState } from "react";
 
 
 export type AuthContextDataProps = {
@@ -20,6 +20,7 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
   const [user, setUser] = useState<UserDTO>({} as UserDTO);
 
 
+  // Logar na aplicação
   async function signIn(email: string, password: string) {
     try {
       const { data } = await api.post('/sessions', { email, password });
@@ -33,6 +34,19 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
 
     }
   }
+
+  // Recuperar usuário logado
+  async function loadUserDate() {
+    const userLogged = await storageUserGet()
+
+    if (userLogged) {
+      setUser(userLogged)
+    }
+  }
+
+  useEffect(() => {
+    loadUserDate()
+  }, [])
 
   return (
     <AuthContext.Provider value={{ user, signIn }}>
