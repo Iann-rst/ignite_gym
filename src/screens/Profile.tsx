@@ -5,6 +5,10 @@ import { Center, Heading, ScrollView, Skeleton, Text, useToast, VStack } from "n
 import { useState } from "react";
 import { TouchableOpacity } from "react-native";
 
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Controller, useForm } from 'react-hook-form';
+import { z } from 'zod';
+
 import { Button } from "@components/Button";
 import { Input } from '@components/Input';
 import { ScreenHeader } from "@components/ScreenHeader";
@@ -12,11 +16,55 @@ import { UserAvatar } from "@components/UserAvatar";
 
 const PHOTO_SIZE = 33;
 
+type FormDataProps = {
+  name: string;
+  password: string;
+  new_password: string
+  new_password_confirm: string;
+}
+
+/* Schema de validação com Zod */
+const schemaValidation = z.object({
+  name: z.string({
+    required_error: 'Informe o nome.'
+  }).trim().nonempty({
+    message: 'Informe o nome.'
+  }),
+
+  password: z.string({
+    required_error: 'Informe a senha.'
+  }).min(6, 'A senha deve ter pelo menos 6 dígitos.'),
+
+  new_password: z.string({
+    required_error: 'Informe a nova senha.'
+  }).min(6, 'A senha deve ter pelo menos 6 dígitos.'),
+
+  new_password_confirm: z.string({
+    required_error: 'Confirme a senha.'
+  }).min(6, 'A senha deve ter pelo menos 6 dígitos.')
+
+}).refine((data) => data.new_password === data.new_password_confirm, {
+  path: ["new_password_confirm"],
+  message: "As senhas diferentes"
+})
+
+
 export function Profile() {
   const [photoIsLoading, setPhotoIsLoading] = useState(false)
   const [userPhoto, setUserPhoto] = useState('https://github.com/Iann-rst.png')
 
   const toast = useToast()
+
+
+  const { control, handleSubmit, formState: { errors } } = useForm<FormDataProps>({
+    resolver: zodResolver(schemaValidation)
+  })
+
+
+  function handleUpdateProfile(data: FormDataProps) {
+    console.log("Update Profile =>", data)
+  }
+
 
   async function handleUserPhotoSelect() {
     setPhotoIsLoading(true)
@@ -84,17 +132,81 @@ export function Profile() {
           </TouchableOpacity>
 
 
-          <Input bg="gray.600" placeholder="Nome" />
+          <Controller
+            control={control}
+            name="name"
+            render={({ field: { onChange, value } }) => (
+              <Input
+                bg="gray.600"
+                placeholder="Nome"
+                onChangeText={onChange}
+                value={value}
+                errorMessage={errors.name?.message}
+              />
+            )}
+          />
+
+
           <Input bg="gray.600" placeholder="E-mail" isDisabled />
         </Center>
 
         <VStack px={10} mt={12} mb={9}>
           <Heading color="gray.100" fontSize="md" fontFamily="heading" mb={2}>Alterar senha</Heading>
-          <Input bg="gray.600" placeholder="Senha antiga" secureTextEntry />
-          <Input bg="gray.600" placeholder="Nova senha" secureTextEntry />
-          <Input bg="gray.600" placeholder="Confirme a nova senha" secureTextEntry />
 
-          <Button title="Atualizar" mt={4} />
+          <Controller
+            control={control}
+            name="password"
+            render={({ field: { onChange, value } }) => (
+              <Input
+                bg="gray.600"
+                placeholder="Senha antiga"
+                secureTextEntry
+                onChangeText={onChange}
+                value={value}
+                errorMessage={errors.password?.message}
+              />
+            )}
+          />
+
+
+          <Controller
+            control={control}
+            name="new_password"
+            render={({ field: { onChange, value } }) => (
+              <Input
+                bg="gray.600"
+                placeholder="Nova senha"
+                secureTextEntry
+                onChangeText={onChange}
+                value={value}
+                errorMessage={errors.new_password?.message}
+              />
+            )}
+          />
+
+
+          <Controller
+            control={control}
+            name="new_password_confirm"
+            render={({ field: { onChange, value } }) => (
+              <Input
+                bg="gray.600"
+                placeholder="Confirme a nova senha"
+                secureTextEntry
+                onChangeText={onChange}
+                value={value}
+                returnKeyType="send"
+                onSubmitEditing={handleSubmit(handleUpdateProfile)}
+                errorMessage={errors.new_password_confirm?.message}
+              />
+            )} />
+
+
+          <Button
+            title="Atualizar"
+            mt={4}
+            onPress={handleSubmit(handleUpdateProfile)}
+          />
         </VStack>
 
       </ScrollView>
