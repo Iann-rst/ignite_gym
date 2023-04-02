@@ -21,8 +21,8 @@ export function Home() {
 
   const toast = useToast();
 
-  function handleOpenExerciseDetails() {
-    navigate("exercise")
+  function handleOpenExerciseDetails(exerciseId: string) {
+    navigate("exercise", { exerciseId })
   }
 
   async function fetchGroups() {
@@ -105,7 +105,7 @@ export function Home() {
             </HStack>
 
             <FlatList data={exercises} keyExtractor={item => item.id} renderItem={({ item }) => (
-              <ExerciseCard onPress={handleOpenExerciseDetails} data={item} />
+              <ExerciseCard onPress={() => handleOpenExerciseDetails(item.id)} data={item} />
             )}
               showsVerticalScrollIndicator={false}
               _contentContainerStyle={{ paddingBottom: 20 }}
