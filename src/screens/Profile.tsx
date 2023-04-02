@@ -197,6 +197,7 @@ export function Profile() {
                 isDisabled
                 onChangeText={onChange}
                 value={value}
+                isReadOnly
               />
             )}
           />
