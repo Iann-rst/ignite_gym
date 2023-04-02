@@ -17,6 +17,9 @@ import { useAuth } from '@hooks/useAuth';
 import { api } from '@services/api';
 import { AppError } from '@utils/AppError';
 
+import defaultUserPhotoImg from '@assets/userPhotoDefault.png';
+
+
 const PHOTO_SIZE = 33;
 
 type FormDataProps = {
@@ -57,9 +60,7 @@ export function Profile() {
   const { user, updateUserProfile } = useAuth()
   const toast = useToast()
   const [isLoading, setIsLoading] = useState(false);
-
   const [photoIsLoading, setPhotoIsLoading] = useState(false)
-  const [userPhoto, setUserPhoto] = useState('https://github.com/Iann-rst.png')
 
 
   const { control, handleSubmit, formState: { errors } } = useForm<FormDataProps>({
@@ -140,17 +141,23 @@ export function Profile() {
           uri: photoSelected.assets[0].uri,
           type: `${photoSelected.assets[0].type}/${fileExtension}`
         } as any;
-        console.log(photoFile)
+        //console.log(photoFile)
 
         const userPhotoUploadForm = new FormData();
 
         userPhotoUploadForm.append('avatar', photoFile);
 
-        await api.patch('/users/avatar', userPhotoUploadForm, {
+        const avatarUpdatedResponse = await api.patch('/users/avatar', userPhotoUploadForm, {
           headers: {
             'Content-Type': 'multipart/form-data'
           }
         })
+
+        const userUpdated = user;
+        userUpdated.avatar = avatarUpdatedResponse.data.avatar;
+        updateUserProfile(userUpdated);
+
+        //console.log(userUpdated)
 
         toast.show({
           title: 'Foto atualizada!',
@@ -184,9 +191,11 @@ export function Profile() {
               />
               :
               <UserAvatar
-                source={{
-                  uri: userPhoto
-                }}
+                source={
+                  user.avatar
+                    ? { uri: `${api.defaults.baseURL}/avatar/${user.avatar}` }
+                    : defaultUserPhotoImg
+                }
                 alt="Foto do usuário"
                 size={PHOTO_SIZE}
               />
