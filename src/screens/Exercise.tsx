@@ -1,4 +1,6 @@
-import { Box, Heading, HStack, Icon, Image, ScrollView, Text, VStack } from "native-base";
+import { useEffect, useState } from "react";
+
+import { Box, Heading, HStack, Icon, Image, ScrollView, Text, useToast, VStack } from "native-base";
 import { TouchableOpacity } from "react-native";
 
 import { Feather } from '@expo/vector-icons';
@@ -7,16 +9,21 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import BodySvg from '@assets/body.svg';
 import RepetitionsSvg from '@assets/repetitions.svg';
 import SeriesSvg from '@assets/series.svg';
+
 import { Button } from "@components/Button";
+import { ExerciseDTO } from "@dtos/ExerciseDTO";
+import { api } from "@services/api";
+import { AppError } from "@utils/AppError";
 
 type RoutesParamsProps = {
   exerciseId: string
 }
 
 export function Exercise() {
-
+  const [exercise, setExercise] = useState<ExerciseDTO>({} as ExerciseDTO)
   const route = useRoute();
   const { exerciseId } = route.params as RoutesParamsProps;
+  const toast = useToast()
 
   const { goBack } = useNavigation()
 
@@ -24,7 +31,30 @@ export function Exercise() {
     goBack();
   }
 
+  async function fetchExerciseDetails() {
+    try {
+      const response = await api.get(`/exercises/${exerciseId}`)
+      setExercise(response.data);
 
+    } catch (error) {
+      const isAppError = error instanceof AppError
+
+      const title = isAppError ? error.message : 'Não foi possível carregar os detalhes do exercício.'
+
+      toast.show({
+        title,
+        bgColor: 'red.500',
+        placement: 'top',
+        _title: {
+          textAlign: 'center'
+        }
+      })
+    }
+  }
+
+  useEffect(() => {
+    fetchExerciseDetails()
+  }, [exerciseId])
 
   return (
     <VStack flex={1}>
@@ -36,13 +66,13 @@ export function Exercise() {
 
         <HStack justifyContent="space-between" mt={4} mb={8} alignItems="center">
           <Heading color="gray.100" fontSize="lg" fontFamily="heading" flexShrink={1}>
-            Puxada Frontal
+            {exercise.name}
           </Heading>
 
           <HStack alignItems="center">
             <BodySvg />
             <Text color="gray.200" ml={1} textTransform="capitalize">
-              Costa
+              {exercise.group}
             </Text>
           </HStack>
         </HStack>
@@ -50,30 +80,29 @@ export function Exercise() {
 
       <ScrollView>
         <VStack p={8}>
-          <Image
-            w="full"
-            h={80}
-            source={{
-              uri: 'https://cdn.fisiculturismo.com.br/monthly_2017_03/puxada-pela-frente-pronada-intermediaria.jpg.ca8dc190ce67b081cce730d04d30e18e.jpg'
-            }}
-            alt="Nome do exercício"
-            mb={3}
-            resizeMode="cover"
-            overflow="hidden"
-            rounded="lg"
-          />
+          <Box rounded="lg" mb={3} overflow="hidden">
+            <Image
+              w="full"
+              h={80}
+              source={{
+                uri: `${api.defaults.baseURL}/exercise/demo/${exercise.demo}`
+              }}
+              alt="Nome do exercício"
+              resizeMode="cover"
+            />
+          </Box>
 
 
           <Box bg="gray.600" rounded="md" pb={4} px={4}>
             <HStack alignItems="center" justifyContent="space-around" mb={6} mt={5}>
               <HStack>
                 <SeriesSvg />
-                <Text color="gray.200" ml="2">3 séries</Text>
+                <Text color="gray.200" ml="2">{exercise.series} séries</Text>
               </HStack>
 
               <HStack>
                 <RepetitionsSvg />
-                <Text color="gray.200" ml="2">12 repetições</Text>
+                <Text color="gray.200" ml="2">{exercise.repetitions} repetições</Text>
               </HStack>
             </HStack>
 
