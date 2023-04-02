@@ -12,7 +12,7 @@ import { api } from "@services/api";
 import { AppError } from "@utils/AppError";
 
 export function Home() {
-  const [groupSelected, setGroupSelected] = useState('costas');
+  const [groupSelected, setGroupSelected] = useState('antebraço');
   const [groups, setGroups] = useState<string[]>([])
   const [exercises, setExercises] = useState<ExerciseDTO[]>([])
   const [isLoading, setIsLoading] = useState(true);

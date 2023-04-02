@@ -1,16 +1,16 @@
-import { useEffect, useState } from "react";
-
-import { Box, Heading, HStack, Icon, Image, ScrollView, Text, useToast, VStack } from "native-base";
-import { TouchableOpacity } from "react-native";
-
 import { Feather } from '@expo/vector-icons';
 import { useNavigation, useRoute } from "@react-navigation/native";
+import { Box, Heading, HStack, Icon, Image, Text, useToast, VStack } from "native-base";
+import { useEffect, useState } from "react";
+import { TouchableOpacity } from "react-native";
 
 import BodySvg from '@assets/body.svg';
 import RepetitionsSvg from '@assets/repetitions.svg';
 import SeriesSvg from '@assets/series.svg';
 
 import { Button } from "@components/Button";
+import { Loading } from "@components/Loading";
+
 import { ExerciseDTO } from "@dtos/ExerciseDTO";
 import { api } from "@services/api";
 import { AppError } from "@utils/AppError";
@@ -20,6 +20,8 @@ type RoutesParamsProps = {
 }
 
 export function Exercise() {
+  const [isLoading, setIsLoading] = useState(true);
+
   const [exercise, setExercise] = useState<ExerciseDTO>({} as ExerciseDTO)
   const route = useRoute();
   const { exerciseId } = route.params as RoutesParamsProps;
@@ -33,6 +35,7 @@ export function Exercise() {
 
   async function fetchExerciseDetails() {
     try {
+      setIsLoading(true)
       const response = await api.get(`/exercises/${exerciseId}`)
       setExercise(response.data);
 
@@ -49,6 +52,8 @@ export function Exercise() {
           textAlign: 'center'
         }
       })
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -78,7 +83,8 @@ export function Exercise() {
         </HStack>
       </VStack>
 
-      <ScrollView>
+
+      {isLoading ? <Loading /> :
         <VStack p={8}>
           <Box rounded="lg" mb={3} overflow="hidden">
             <Image
@@ -110,7 +116,7 @@ export function Exercise() {
           </Box>
 
         </VStack>
-      </ScrollView>
+      }
     </VStack>
   )
 }
