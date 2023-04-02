@@ -12,6 +12,7 @@ import { Button } from "@components/Button";
 import { Loading } from "@components/Loading";
 
 import { ExerciseDTO } from "@dtos/ExerciseDTO";
+import { AppNavigatorRoutesProps } from '@routes/app.routes';
 import { api } from "@services/api";
 import { AppError } from "@utils/AppError";
 
@@ -20,14 +21,14 @@ type RoutesParamsProps = {
 }
 
 export function Exercise() {
+  const [sendingRegister, setSendingRegister] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-
   const [exercise, setExercise] = useState<ExerciseDTO>({} as ExerciseDTO)
   const route = useRoute();
   const { exerciseId } = route.params as RoutesParamsProps;
   const toast = useToast()
 
-  const { goBack } = useNavigation()
+  const { navigate, goBack } = useNavigation<AppNavigatorRoutesProps>()
 
   function handleGoBack() {
     goBack();
@@ -54,6 +55,41 @@ export function Exercise() {
       })
     } finally {
       setIsLoading(false);
+    }
+  }
+
+
+  async function handleExerciseHistoryRegister() {
+    try {
+      setSendingRegister(true)
+      await api.post('/history', { exercise_id: exerciseId });
+
+      toast.show({
+        title: 'Parabéns! Exercício registrado no seu histórico.',
+        bgColor: 'green.700',
+        placement: 'top',
+        _title: {
+          textAlign: 'center'
+        }
+      })
+
+      navigate('history')
+
+    } catch (error) {
+      const isAppError = error instanceof AppError
+
+      const title = isAppError ? error.message : 'Não foi possível registrar o exercício.'
+
+      toast.show({
+        title,
+        bgColor: 'red.500',
+        placement: 'top',
+        _title: {
+          textAlign: 'center'
+        }
+      })
+    } finally {
+      setSendingRegister(false);
     }
   }
 
@@ -112,7 +148,7 @@ export function Exercise() {
               </HStack>
             </HStack>
 
-            <Button title="Marcar como finalizado" />
+            <Button title="Marcar como finalizado" isLoading={sendingRegister} onPress={handleExerciseHistoryRegister} />
           </Box>
 
         </VStack>
