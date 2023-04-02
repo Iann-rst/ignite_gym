@@ -5,64 +5,104 @@ import { Center, Heading, ScrollView, Skeleton, Text, useToast, VStack } from "n
 import { useState } from "react";
 import { TouchableOpacity } from "react-native";
 
-import { zodResolver } from '@hookform/resolvers/zod';
+import { yupResolver } from '@hookform/resolvers/yup';
 import { Controller, useForm } from 'react-hook-form';
-import { z } from 'zod';
+import * as yup from 'yup';
 
 import { Button } from "@components/Button";
 import { Input } from '@components/Input';
 import { ScreenHeader } from "@components/ScreenHeader";
 import { UserAvatar } from "@components/UserAvatar";
+import { useAuth } from '@hooks/useAuth';
+import { api } from '@services/api';
+import { AppError } from '@utils/AppError';
 
 const PHOTO_SIZE = 33;
 
 type FormDataProps = {
   name: string;
+  email: string;
   password: string;
-  new_password: string
-  new_password_confirm: string;
+  old_password: string;
+  confirm_password: string;
 }
 
 /* Schema de validação com Zod */
-const schemaValidation = z.object({
-  name: z.string({
-    required_error: 'Informe o nome.'
-  }).trim().nonempty({
-    message: 'Informe o nome.'
-  }),
+const profileSchema = yup.object({
+  name: yup
+    .string()
+    .required('Informe o nome.'),
 
-  password: z.string({
-    required_error: 'Informe a senha.'
-  }).min(6, 'A senha deve ter pelo menos 6 dígitos.'),
-
-  new_password: z.string({
-    required_error: 'Informe a nova senha.'
-  }).min(6, 'A senha deve ter pelo menos 6 dígitos.'),
-
-  new_password_confirm: z.string({
-    required_error: 'Confirme a senha.'
-  }).min(6, 'A senha deve ter pelo menos 6 dígitos.')
-
-}).refine((data) => data.new_password === data.new_password_confirm, {
-  path: ["new_password_confirm"],
-  message: "As senhas diferentes"
+  password: yup
+    .string()
+    .min(6, 'A senha deve ter pelo menos 6 dígitos.')
+    .nullable()
+    .transform((value) => !!value ? value : null),
+  confirm_password: yup
+    .string()
+    .nullable()
+    .transform((value) => !!value ? value : null)
+    .oneOf([yup.ref('password'), null], 'A confirmação de senha não confere.')
+    .when('password', {
+      is: (field: any) => field,
+      then: (schema) => schema
+        .nullable()
+        .required('Informe a confirmação da senha.')
+        .transform((value) => !!value ? value : null)
+    }),
 })
 
 
 export function Profile() {
+  const { user, updateUserProfile } = useAuth()
+  const toast = useToast()
+  const [isLoading, setIsLoading] = useState(false);
+
   const [photoIsLoading, setPhotoIsLoading] = useState(false)
   const [userPhoto, setUserPhoto] = useState('https://github.com/Iann-rst.png')
 
-  const toast = useToast()
-
 
   const { control, handleSubmit, formState: { errors } } = useForm<FormDataProps>({
-    resolver: zodResolver(schemaValidation)
+    defaultValues: {
+      name: user.name,
+      email: user.email
+    },
+    resolver: yupResolver(profileSchema)
   })
 
 
-  function handleUpdateProfile(data: FormDataProps) {
-    console.log("Update Profile =>", data)
+  async function handleProfileUpdate(data: FormDataProps) {
+    try {
+      setIsLoading(true);
+      const userUpdated = user;
+
+      userUpdated.name = data.name;
+
+      await api.put('/users', data);
+
+      await updateUserProfile(userUpdated);
+
+      toast.show({
+        title: 'Atualizado com sucesso',
+        placement: 'top',
+        bgColor: "green.500"
+      })
+    } catch (error) {
+      const isAppError = error instanceof AppError
+      const title = isAppError ? error.message : 'Não foi possível atualizar as informações.'
+
+      toast.show({
+        title,
+        placement: 'top',
+        bgColor: "red.500",
+        _title: {
+          textAlign: 'center'
+        }
+      })
+
+    } finally {
+      setIsLoading(false)
+    }
   }
 
 
@@ -147,7 +187,20 @@ export function Profile() {
           />
 
 
-          <Input bg="gray.600" placeholder="E-mail" isDisabled />
+          <Controller
+            control={control}
+            name="email"
+            render={({ field: { onChange, value } }) => (
+              <Input
+                bg="gray.600"
+                placeholder="E-mail"
+                isDisabled
+                onChangeText={onChange}
+                value={value}
+              />
+            )}
+          />
+
         </Center>
 
         <VStack px={10} mt={12} mb={9}>
@@ -155,14 +208,28 @@ export function Profile() {
 
           <Controller
             control={control}
-            name="password"
-            render={({ field: { onChange, value } }) => (
+            name="old_password"
+            render={({ field: { onChange } }) => (
               <Input
                 bg="gray.600"
                 placeholder="Senha antiga"
                 secureTextEntry
                 onChangeText={onChange}
-                value={value}
+                errorMessage={errors.old_password?.message}
+              />
+            )}
+          />
+
+
+          <Controller
+            control={control}
+            name="password"
+            render={({ field: { onChange } }) => (
+              <Input
+                bg="gray.600"
+                placeholder="Nova senha"
+                secureTextEntry
+                onChangeText={onChange}
                 errorMessage={errors.password?.message}
               />
             )}
@@ -171,33 +238,14 @@ export function Profile() {
 
           <Controller
             control={control}
-            name="new_password"
-            render={({ field: { onChange, value } }) => (
-              <Input
-                bg="gray.600"
-                placeholder="Nova senha"
-                secureTextEntry
-                onChangeText={onChange}
-                value={value}
-                errorMessage={errors.new_password?.message}
-              />
-            )}
-          />
-
-
-          <Controller
-            control={control}
-            name="new_password_confirm"
-            render={({ field: { onChange, value } }) => (
+            name="confirm_password"
+            render={({ field: { onChange } }) => (
               <Input
                 bg="gray.600"
                 placeholder="Confirme a nova senha"
                 secureTextEntry
                 onChangeText={onChange}
-                value={value}
-                returnKeyType="send"
-                onSubmitEditing={handleSubmit(handleUpdateProfile)}
-                errorMessage={errors.new_password_confirm?.message}
+                errorMessage={errors.confirm_password?.message}
               />
             )} />
 
@@ -205,7 +253,8 @@ export function Profile() {
           <Button
             title="Atualizar"
             mt={4}
-            onPress={handleSubmit(handleUpdateProfile)}
+            onPress={handleSubmit(handleProfileUpdate)}
+            isLoading={isLoading}
           />
         </VStack>
 
