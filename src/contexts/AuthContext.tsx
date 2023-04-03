@@ -123,6 +123,15 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
     loadUserDate()
   }, [])
 
+  useEffect(() => {
+    const subscribe = api.registerInterceptTokenManager(signOut);
+
+
+    return () => {
+      subscribe();
+    }
+  }, [signOut])
+
   return (
     <AuthContext.Provider value={{
       user,
